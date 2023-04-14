@@ -14,6 +14,7 @@ namespace Chess.Game
         private HashSet<Piece> Pieces;
         private HashSet<Piece> CatchPieces;
         public bool IsCheck { get; private set; }
+        public Piece? enPassantVunerable { get; private set; }
 
         public ChessMatch()
         {
@@ -21,6 +22,7 @@ namespace Chess.Game
             Round = 1;
             SelectedPlayer = Color.White;
             EndGame = false;
+            enPassantVunerable = null;
             Pieces = new HashSet<Piece>();
             CatchPieces = new HashSet<Piece>();
             PutPieces();
@@ -33,6 +35,50 @@ namespace Chess.Game
             Piece catchPiece = Brd.RemovePiece(destiny);
             Brd.InsertPiece(p, destiny);
             if (catchPiece != null) CatchPieces.Add(catchPiece);
+
+            // #SpecialMov
+
+            // Little Rockie
+            if (p is King && destiny.Column == origin.Column + 2)
+            {
+                Position originTower = new Position(origin.Row, origin.Column + 3);
+                Position destinyTower = new Position(origin.Row, origin.Column + 1);
+                Piece t = Brd.RemovePiece(originTower);
+                t.AmoutMovIncrements();
+                Brd.InsertPiece(t, destinyTower);
+
+            }
+            // Big Rockie
+            if (p is King && destiny.Column == origin.Column - 2)
+            {
+                Position originTower = new Position(origin.Row, origin.Column - 4);
+                Position destinyTower = new Position(origin.Row, origin.Column - 1);
+                Piece t = Brd.RemovePiece(originTower);
+                t.AmoutMovIncrements();
+                Brd.InsertPiece(t, destinyTower);
+
+            }
+
+            // En Passant
+            if (p is Pawn)
+            {
+                if (origin.Column != destiny.Column && catchPiece == null)
+                {
+                    Position posP;
+                    if (p.Color == Color.White)
+                    {
+                        posP = new Position(destiny.Row + 1, destiny.Column);
+                    }
+                    else
+                    {
+                        posP = new Position(destiny.Row - 1, destiny.Column);
+                    }
+
+                    catchPiece = Brd.RemovePiece(posP);
+                    CatchPieces.Add(catchPiece);
+                }
+            }
+
             return catchPiece;
         }
 
@@ -45,6 +91,48 @@ namespace Chess.Game
                 CatchPieces.Remove(catchPiece);
             }
             Brd.InsertPiece(p, origin);
+
+            // #SpecialMov
+
+            // Little Rockie
+            if (p is King && destiny.Column == origin.Column + 2)
+            {
+                Position originTower = new Position(origin.Row, origin.Column + 3);
+                Position destinyTower = new Position(origin.Row, origin.Column + 1);
+                Piece t = Brd.RemovePiece(destinyTower);
+                t.AmoutMovDecrements();
+                Brd.InsertPiece(t, originTower);
+
+            }
+            // Big Rockie
+            if (p is King && destiny.Column == origin.Column - 2)
+            {
+                Position originTower = new Position(origin.Row, origin.Column - 4);
+                Position destinyTower = new Position(origin.Row, origin.Column - 1);
+                Piece t = Brd.RemovePiece(destinyTower);
+                t.AmoutMovDecrements();
+                Brd.InsertPiece(t, originTower);
+
+            }
+            // En Passant
+            if (p is Pawn)
+            {
+                if (origin.Column != destiny.Column && catchPiece != enPassantVunerable)
+                {
+                    Piece pawn = Brd.RemovePiece(destiny);
+                    Position posP;
+                    if (p.Color == Color.White)
+                    {
+                        posP = new Position(3, destiny.Column);
+                    }
+                    else
+                    {
+                        posP = new Position(4, destiny.Column);
+                    }
+
+                    Brd.InsertPiece(pawn, posP);
+                }
+            }
         }
 
         public void PerformsMov(Position origin, Position destiny)
@@ -58,6 +146,22 @@ namespace Chess.Game
                 throw new BoardException("You can't put yourself in check");
             }
 
+            Piece p = Brd.SelectedPiece(destiny);
+
+            // SpecialMov Promotion
+
+            if (p is Pawn)
+            {
+                if (p.Color == Color.White && destiny.Row != 0 || (p.Color == Color.Black && destiny.Row == 7))
+                {
+                    p = Brd.RemovePiece(destiny);
+                    Pieces.Remove(p);
+                    Piece queen = new Queen(Brd, p.Color);
+                    Brd.InsertPiece(queen, destiny);
+                    Pieces.Add(queen);
+                }
+            }
+
             if (IsInCheck(Enemy(SelectedPlayer))) IsCheck = true;
             else IsCheck = false;
 
@@ -66,6 +170,18 @@ namespace Chess.Game
             {
                 Round++;
                 ChangePlayer();
+            }
+
+
+
+            // #SpecialMov En Passant
+            if (p is Pawn && (destiny.Row == origin.Row - 2 || destiny.Row == origin.Row + 2))
+            {
+                enPassantVunerable = p;
+            }
+            else
+            {
+                enPassantVunerable = null;
             }
         }
 
@@ -121,7 +237,7 @@ namespace Chess.Game
             PutNewPiece('d', 2, new Tower(Brd, Color.White));
             PutNewPiece('e', 2, new Tower(Brd, Color.White));
             PutNewPiece('e', 1, new Tower(Brd, Color.White));
-            PutNewPiece('d', 1, new King(Brd, Color.White));
+            PutNewPiece('d', 1, new King(Brd, Color.White, this));
         }
 
         private Color Enemy(Color color)

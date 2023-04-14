@@ -9,8 +9,10 @@ namespace Chess.Game
 {
     class Pawn : Piece
     {
-        public Pawn(Board board, Color color) : base(board, color)
+        private ChessMatch Game;
+        public Pawn(Board board, Color color, ChessMatch game) : base(board, color)
         {
+            Game = game;
         }
 
         private bool ExistEnemy(Position pos)
@@ -51,6 +53,22 @@ namespace Chess.Game
                 pos.ValueDefine(Position.Row - 1, Position.Column + 1);
                 if (Board.PositionIsValid(pos) && CanMov(pos)) mat[pos.Row, pos.Column] = true;
 
+                //#SpecialMov EnPassant
+                if(pos.Row == 3)
+                {
+                    Position left = new Position(pos.Row, pos.Column - 1);
+                    if(Board.PositionIsValid(left) && ExistEnemy(left) && Board.SelectedPiece(left) == Game.enPassantVunerable)
+                    {
+                        mat[left.Row -1, left.Column] = true; 
+                    }
+                    Position right = new Position(pos.Row, pos.Column + 1);
+                    if (Board.PositionIsValid(right) && ExistEnemy(right) && Board.SelectedPiece(right) == Game.enPassantVunerable)
+                    {
+                        mat[right.Row -1 , right.Column] = true;
+                    }
+
+                }
+
             }
             else
             {
@@ -65,6 +83,21 @@ namespace Chess.Game
 
                 pos.ValueDefine(Position.Row + 1, Position.Column + 1);
                 if (Board.PositionIsValid(pos) && CanMov(pos)) mat[pos.Row, pos.Column] = true;
+
+                if (pos.Row == 4)
+                {
+                    Position left = new Position(pos.Row, pos.Column - 1);
+                    if (Board.PositionIsValid(left) && ExistEnemy(left) && Board.SelectedPiece(left) == Game.enPassantVunerable)
+                    {
+                        mat[left.Row + 1, left.Column] = true;
+                    }
+                    Position right = new Position(pos.Row, pos.Column + 1);
+                    if (Board.PositionIsValid(right) && ExistEnemy(right) && Board.SelectedPiece(right) == Game.enPassantVunerable)
+                    {
+                        mat[right.Row + 1, right.Column] = true;
+                    }
+
+                }
             }
 
             return mat;

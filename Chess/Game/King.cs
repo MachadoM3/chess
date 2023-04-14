@@ -4,6 +4,7 @@ namespace Chess.Game
     class King : Piece
     {
         private ChessMatch game;
+
         public King(Board board, Color color, ChessMatch game) : base(board, color)
         {
             this.game = game;
@@ -58,18 +59,28 @@ namespace Chess.Game
             pos.ValueDefine(Position.Row, Position.Column + 1);
             if (Board.PositionIsValid(pos) && CanMov(pos)) mat[pos.Row, pos.Column] = true;
 
-            // #SPECIAL PLAY ROQUE
+            // #SPECIAL PLAY 
             if(AmountMov == 0 && !game.IsCheck)
             {
                 Position posT1 = new Position(pos.Row, pos.Column +3);
-                if(TestRockyForTower(posT1)) {
+                //LITTLE ROCKIE
+                if (TestRockyForTower(posT1)) {
                     Position p1 = new Position(pos.Row, pos.Column + 1);
                     Position p2 = new Position(pos.Row, pos.Column + 2);
-                    if (Board.SelectedPiece(p1) == null && Board.SelectedPiece(p2) == null) mat[pos.Row, pos.Column + 2] == true;
+                    if (Board.SelectedPiece(p1) == null && Board.SelectedPiece(p2) == null) mat[pos.Row, pos.Column + 2] = true;
+                }
+
+
+                Position posT2= new Position(pos.Row, pos.Column - 4);
+                // BIG ROCKIE
+                if (TestRockyForTower(posT1))
+                {
+                    Position p1 = new Position(pos.Row, pos.Column - 1);
+                    Position p2 = new Position(pos.Row, pos.Column - 2);
+                    Position p3 = new Position(pos.Row, pos.Column - 3);
+                    if (Board.SelectedPiece(p1) == null && Board.SelectedPiece(p2) == null && Board.SelectedPiece(p3) == null) mat[pos.Row, pos.Column - 2] = true;
                 }
             }
-
-
             return mat;
         }
 
